@@ -116,8 +116,11 @@ module Lid()
 				translate([-SemiLidOuterLip+CornerRadius, -SemiLidOuterLip+CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
 			}
 			
-			// GPS Window
-			translate([0, 0, -j]) cylinder(r = Window/2, h = Thickness+j*2);
+			if(Window > 0)
+			{
+				// GPS Window
+				translate([0, 0, -j]) cylinder(r = Window/2, h = Thickness+j*2);
+			}
 		}
 
 		difference()
