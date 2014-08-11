@@ -23,6 +23,12 @@ CableHoleW = 9;
 // Distance of the connection from the edge of the board
 CableHolePos = 16;
 
+// Mounting holes for the base? (Zero=no holes)
+MountingCentres = 31;
+
+// Diameter of the mounting holes?
+MountingBoltSize = 3;
+
 /* [Advanced Settings] */
 // Thickness of the walls, lid and bottom
 Thickness = 1;
@@ -47,6 +53,18 @@ j = 0.1;
 $fn=100;
 InnerHeight = UnderDepth + PCB + OverDepth;
 
+BaseInnerLarge = GpsBase + (Tolerance * 2);
+BaseInnerSmall = BaseInnerLarge - (Shelf * 2);
+BaseOuter = BaseInnerLarge + (Thickness * 2);
+
+LidOuterLip = BaseOuter;
+LidOuter = BaseInnerLarge - (Tolerance * 2);
+LidInner = LidOuter - (Thickness * 2);
+
+SemiLidOuterLip = LidOuterLip / 2;
+SemiLidOuter = LidOuter / 2;
+SemiLidInner = LidInner / 2;
+
 module Base()
 {
 	translate([0, 0, Thickness])
@@ -56,56 +74,70 @@ module Base()
 		translate([0, 0, -Thickness])
 		hull()
 		{
-			translate([GpsBase+Thickness*2-CornerRadius, GpsBase+Thickness*2-CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
-			translate([CornerRadius, GpsBase+Thickness*2-CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
-			translate([GpsBase+Thickness*2-CornerRadius, CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
+			translate([BaseOuter-CornerRadius, GpsBase+Thickness*2-CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
+			translate([CornerRadius, BaseOuter-CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
+			translate([BaseOuter-CornerRadius, CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
 			translate([CornerRadius, CornerRadius, 0]) cylinder(r = CornerRadius, h = InnerHeight+Thickness);
 		}
 		
 		// Deepest cut
-		translate([Thickness+Shelf, Thickness+Shelf, 0]) cube([GpsBase-Shelf*2, GpsBase-Shelf*2, InnerHeight]);
+		translate([Thickness+Shelf, Thickness+Shelf, 0]) cube([BaseInnerSmall, BaseInnerSmall, InnerHeight]);
 
 		// Shelf
-		translate([Thickness, Thickness, UnderDepth]) cube([GpsBase, GpsBase, InnerHeight]);
+		translate([Thickness, Thickness, UnderDepth]) cube([BaseInnerLarge, BaseInnerLarge, InnerHeight]);
 		
 		// Hole for wire
 		translate([-j, Thickness+CableHolePos, UnderDepth-CableHoleH]) cube([Thickness+Shelf+j*2, CableHoleW, CableHoleH+j]);
+		
+		// Mounting Holes
+		if(MountingCentres > 0)
+		{
+			translate([-MountingCentres/2, -MountingCentres/2, 0]) translate([BaseOuter * 0.5, BaseOuter * 0.5, -Thickness-j]) cylinder(r = MountingBoltSize/2, h = Thickness+j*2);
+			translate([-MountingCentres/2, MountingCentres/2, 0]) translate([BaseOuter * 0.5, BaseOuter * 0.5, -Thickness-j]) cylinder(r = MountingBoltSize/2, h = Thickness+j*2);
+			translate([MountingCentres/2, -MountingCentres/2, 0]) translate([BaseOuter * 0.5, BaseOuter * 0.5, -Thickness-j]) cylinder(r = MountingBoltSize/2, h = Thickness+j*2);
+			translate([MountingCentres/2, MountingCentres/2, 0]) translate([BaseOuter * 0.5, BaseOuter * 0.5, -Thickness-j]) cylinder(r = MountingBoltSize/2, h = Thickness+j*2);
+		}
 	}
 }
 
 module Lid()
 {
+	translate([SemiLidOuterLip, SemiLidOuterLip, 0])
 	union()
 	{
 		difference()
 		{
+			// Lid lip
 			hull()
 			{
-				translate([GpsBase+Thickness*2-CornerRadius, GpsBase+Thickness*2-CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
-				translate([CornerRadius, GpsBase+Thickness*2-CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
-				translate([GpsBase+Thickness*2-CornerRadius, CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
-				translate([CornerRadius, CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
+				translate([SemiLidOuterLip-CornerRadius,    SemiLidOuterLip-CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
+				translate([-SemiLidOuterLip+CornerRadius,  SemiLidOuterLip-CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
+				translate([SemiLidOuterLip-CornerRadius,   -SemiLidOuterLip+CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
+				translate([-SemiLidOuterLip+CornerRadius, -SemiLidOuterLip+CornerRadius, 0]) cylinder(r = CornerRadius, h = Thickness);
 			}
 			
 			// GPS Window
-			translate([(GpsBase+Thickness*2)/2, (GpsBase+Thickness*2)/2, -j]) cylinder(r = Window/2, h = Thickness+j*2);
+			translate([0, 0, -j]) cylinder(r = Window/2, h = Thickness+j*2);
 		}
 
 		difference()
 		{
+			// Outer dimension
 			hull()
 			{
-				translate([GpsBase+Thickness-CornerRadius-Tolerance, GpsBase+Thickness-CornerRadius-Tolerance, j*2]) cylinder(r = CornerRadius, h = OverDepth);
-				translate([Thickness+CornerRadius+Tolerance, GpsBase+Thickness-CornerRadius-Tolerance, j*2]) cylinder(r = CornerRadius, h = OverDepth);
-				translate([Thickness+CornerRadius+Tolerance, Thickness+CornerRadius+Tolerance, j*2]) cylinder(r = CornerRadius, h = OverDepth);
-				translate([GpsBase+Thickness-CornerRadius-Tolerance, Thickness+CornerRadius+Tolerance, j*2]) cylinder(r = CornerRadius, h = OverDepth);
+				translate([SemiLidOuter-CornerRadius,   SemiLidOuter-CornerRadius, j*2]) cylinder(r = CornerRadius, h = OverDepth);
+				translate([-SemiLidOuter+CornerRadius, SemiLidOuter-CornerRadius, j*2]) cylinder(r = CornerRadius, h = OverDepth);
+				translate([-SemiLidOuter+CornerRadius, -SemiLidOuter+CornerRadius, j*2]) cylinder(r = CornerRadius, h = OverDepth);
+				translate([SemiLidOuter-CornerRadius, -SemiLidOuter+CornerRadius, j*2]) cylinder(r = CornerRadius, h = OverDepth);
 			}
+			
+			// Inner dimension
 			hull()
 			{			
-				translate([GpsBase-CornerRadius-Tolerance, GpsBase-CornerRadius-Tolerance, j]) cylinder(r = CornerRadius, h = OverDepth+j*3);
-				translate([Thickness*2+CornerRadius+Tolerance, GpsBase-CornerRadius-Tolerance, j]) cylinder(r = CornerRadius, h = OverDepth+j*3);
-				translate([Thickness*2+CornerRadius+Tolerance, Thickness*2+CornerRadius+Tolerance, j]) cylinder(r = CornerRadius, h = OverDepth+j*3);
-				translate([GpsBase-CornerRadius-Tolerance, Thickness*2+CornerRadius+Tolerance, j]) cylinder(r = CornerRadius, h = OverDepth+j*3);
+				translate([SemiLidInner-CornerRadius,   SemiLidInner-CornerRadius, j]) cylinder(r = CornerRadius, h = OverDepth+j*2);
+				translate([-SemiLidInner+CornerRadius, SemiLidInner-CornerRadius, j]) cylinder(r = CornerRadius, h = OverDepth+j*2);
+				translate([-SemiLidInner+CornerRadius, -SemiLidInner+CornerRadius, j]) cylinder(r = CornerRadius, h = OverDepth+j*2);
+				translate([SemiLidInner-CornerRadius, -SemiLidInner+CornerRadius, j]) cylinder(r = CornerRadius, h = OverDepth+j*2);
 			}
 		}
 		
