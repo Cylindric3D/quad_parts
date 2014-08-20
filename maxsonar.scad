@@ -4,10 +4,6 @@
 ###############################################################################
 This is a small case for mounting and protecting the MaxBotix LV-MaxSonar-EZ4 module.
 
---
-
-UNTESTED - not printed this yet, so subject to change.
-
 ---
 
 The latest snapshot is available on [GitHub](https://github.com/Cylindric3D/quad_parts).
@@ -24,7 +20,7 @@ Simply print out one base and one cover, either individually, or with the combin
 /* [Global] */
 
 // Which part would you like to see?
-part = "demo"; // [both:Both,cover:Cover,base:Base,demo:Demo]
+part = "both"; // [both:Both,cover:Cover,base:Base,demo:Demo]
 
 /* [Printer] */
 build_plate_selector = 0; //[0:Replicator 2,1: Replicator,2:Thingomatic,3:Manual]
@@ -98,12 +94,8 @@ module Cover()
 			cube(BaseSize);
 			
 			translate([BigHolePos + Thickness, BaseSize[y]/2, -j])
-			cylinder(r = Aperture / 2 + j, h = Thickness + j * 2);
+			cylinder(r = Aperture / 2 + j + 0.2, h = Thickness + j * 2);
 		}
-		
-		// Cable side
-		translate([0, Thickness, 0])
-		cube([Thickness, BaseSize[y] - Thickness * 2, 4]);
 
 		// Closed side
 		translate([BaseSize[x] - Thickness, Thickness, 0])
@@ -138,8 +130,19 @@ module Base()
 		// Base
 		cube(BaseSize);
 		
-		// Cable side wall
-		cube([Thickness, BaseSize[y], 4]);
+		difference()
+		{
+			// Cable side wall
+			cube([Thickness, BaseSize[y], 4]);
+			
+			// -
+			translate([-Thickness/2, 3, 1.75])
+			cube([Thickness, 2, 0.5]);
+
+			// +
+			translate([-Thickness/2, 6, 1.75]) cube([Thickness, 2, 0.5]);
+			translate([-Thickness/2, 7.25, 1]) rotate([90, 0, 0]) cube([Thickness, 2, 0.5]);			
+		}
 
 		// Opposite side wall
 		translate([BaseSize[x]-Thickness, 0, 0]) cube([Thickness, BaseSize[y], 4]);
@@ -155,10 +158,10 @@ module Base()
 		union()
 		{
 			translate(Hole1Pos)
-			PCBPeg(HoleSize, Thickness + BoardSize[z] + Thickness + j, Thickness + j);
+			PCBPeg(HoleSize, Thickness + BoardSize[z] + Thickness *2 + j, Thickness + j);
 
 			translate(Hole2Pos)
-			PCBPeg(HoleSize, Thickness + BoardSize[z] + Thickness + j, Thickness + j);
+			PCBPeg(HoleSize, Thickness + BoardSize[z] + Thickness * 2 + j, Thickness + j);
 
 			translate([Hole1Pos[x], Hole2Pos[y], 0])
 			cylinder(r = (HoleSize / 2 * 0.9) + 0.5, h = Thickness + j);
@@ -172,20 +175,28 @@ module Base()
 module print_part()
 {
 	if (part == "demo")
-	{		
-		Base();
-		
-		translate([0, 0, WallHeight+j])
-		translate([0, BaseSize[y], Thickness]) rotate([180, 0, 0])
-		Cover();
+	{	
+		translate([-BaseSize[x]/2, -BaseSize[y]/2, 0])
+		union()
+		{
+			Base();
+			
+			translate([0, 0, WallHeight+j])
+			translate([0, BaseSize[y], Thickness]) rotate([180, 0, 0])
+			Cover();
 
-		translate([Thickness, Thickness, Thickness*2])
-		%MaxSonar();
+			translate([Thickness, Thickness, Thickness*2])
+			%MaxSonar();
+		}
 	}
 	if (part == "both")
 	{
-		translate(-[BaseSize[x]+Thickness, 0, 0]) Base();
-		translate([Thickness, 0, 0]) Cover();
+		translate([0, -BaseSize[y]/2, 0])
+		union()
+		{
+			translate(-[BaseSize[x]+Thickness, 0, 0]) Base();
+			translate([Thickness, 0, 0]) Cover();
+		}
 	}
 	if (part == "cover")
 	{
